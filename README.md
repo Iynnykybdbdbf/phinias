@@ -18,6 +18,8 @@ npm run preview
 
 ## GitHub Pages
 
+Die Veröffentlichung wird automatisch über GitHub Actions gestartet.
+
 Das Projekt ist für die Veröffentlichung unter `https://<username>.github.io/phinias/` konfiguriert. Unter **Settings → Pages** muss als Quelle **GitHub Actions** ausgewählt sein. Danach wird die Website bei jedem Push auf `main` automatisch gebaut und veröffentlicht.
 
 ## Spielstärke
