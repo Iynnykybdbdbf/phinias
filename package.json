@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "npm run prepare:engine",
     "prepare:engine": "node scripts/prepare-engine.mjs",
     "build": "npm run prepare:engine && tsc -b && vite build",
     "preview": "vite preview"
