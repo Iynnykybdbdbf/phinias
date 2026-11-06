@@ -1,7 +1,7 @@
 import { readdir, copyFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const source = path.resolve("node_modules/stockfish/bin");
+const source = path.resolve("node_modules/stockfish/src");
 const target = path.resolve("public/engine");
 await mkdir(target, { recursive: true });
 const entries = await readdir(source);
