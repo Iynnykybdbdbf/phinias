@@ -5,15 +5,15 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 3, multi: 8, mistakeChance: 0.46, blunderChance: 0.09, maxMistake: 1.8, maxBlunder: 3.5 },
-  { name: "Schwach", eloLabel: "250–350", skill: 4, multi: 8, mistakeChance: 0.42, blunderChance: 0.08, maxMistake: 1.6, maxBlunder: 3.2 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 5, multi: 8, mistakeChance: 0.38, blunderChance: 0.07, maxMistake: 1.4, maxBlunder: 2.8 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 7, multi: 8, mistakeChance: 0.33, blunderChance: 0.06, maxMistake: 1.2, maxBlunder: 2.5 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 9, multi: 8, mistakeChance: 0.28, blunderChance: 0.05, maxMistake: 1.0, maxBlunder: 2.2 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 11, multi: 8, mistakeChance: 0.23, blunderChance: 0.04, maxMistake: 0.9, maxBlunder: 2.0 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 14, multi: 8, mistakeChance: 0.18, blunderChance: 0.03, maxMistake: 0.75, maxBlunder: 1.7 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.14, blunderChance: 0.02, maxMistake: 0.6, maxBlunder: 1.4 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.11, blunderChance: 0.015, maxMistake: 0.5, maxBlunder: 1.2 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 16, mistakeChance: 0.76, blunderChance: 0.18, maxMistake: 2.8, maxBlunder: 6.0 },
+  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 14, mistakeChance: 0.68, blunderChance: 0.15, maxMistake: 2.4, maxBlunder: 5.2 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 12, mistakeChance: 0.60, blunderChance: 0.12, maxMistake: 2.0, maxBlunder: 4.5 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 10, mistakeChance: 0.50, blunderChance: 0.09, maxMistake: 1.6, maxBlunder: 3.5 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.36, blunderChance: 0.06, maxMistake: 1.1, maxBlunder: 2.4 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 6, mistakeChance: 0.23, blunderChance: 0.035, maxMistake: 0.7, maxBlunder: 1.6 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 14, multi: 4, mistakeChance: 0.12, blunderChance: 0.015, maxMistake: 0.4, maxBlunder: 1.0 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 3, mistakeChance: 0.06, blunderChance: 0.005, maxMistake: 0.25, maxBlunder: 0.6 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 2, mistakeChance: 0.02, blunderChance: 0.002, maxMistake: 0.15, maxBlunder: 0.4 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -265,8 +265,8 @@ export default function App() {
               </button>;
             }))}
             {arrow && <svg className="move-arrow" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <defs><marker id="arrowhead" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#777777"/></marker></defs>
-              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke="#777777" strokeWidth="1.35" strokeLinecap="round" markerEnd="url(#arrowhead)" opacity=".9"/>
+              <defs><marker id="arrowhead" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#35c98a"/></marker></defs>
+              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke="#35c98a" strokeWidth="1.35" strokeLinecap="round" markerEnd="url(#arrowhead)" opacity=".9"/>
             </svg>}
           </div>
         </div>
