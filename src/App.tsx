@@ -5,15 +5,15 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 4, multi: 4, mistakeChance: 0.14, blunderChance: 0.018, maxMistake: 0.65, maxBlunder: 1.4 },
-  { name: "Schwach", eloLabel: "250–350", skill: 5, multi: 4, mistakeChance: 0.13, blunderChance: 0.016, maxMistake: 0.6, maxBlunder: 1.3 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 6, multi: 4, mistakeChance: 0.12, blunderChance: 0.014, maxMistake: 0.55, maxBlunder: 1.2 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 8, multi: 4, mistakeChance: 0.10, blunderChance: 0.012, maxMistake: 0.5, maxBlunder: 1.1 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 10, multi: 4, mistakeChance: 0.085, blunderChance: 0.01, maxMistake: 0.45, maxBlunder: 1.0 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 12, multi: 4, mistakeChance: 0.07, blunderChance: 0.008, maxMistake: 0.4, maxBlunder: 0.9 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 15, multi: 4, mistakeChance: 0.055, blunderChance: 0.006, maxMistake: 0.35, maxBlunder: 0.8 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 18, multi: 4, mistakeChance: 0.04, blunderChance: 0.004, maxMistake: 0.3, maxBlunder: 0.7 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 4, mistakeChance: 0.025, blunderChance: 0.003, maxMistake: 0.25, maxBlunder: 0.6 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 4, multi: 6, mistakeChance: 0.22, blunderChance: 0.035, maxMistake: 1.0, maxBlunder: 2.2 },
+  { name: "Schwach", eloLabel: "250–350", skill: 5, multi: 6, mistakeChance: 0.20, blunderChance: 0.03, maxMistake: 0.9, maxBlunder: 2.0 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 6, multi: 6, mistakeChance: 0.18, blunderChance: 0.026, maxMistake: 0.8, maxBlunder: 1.8 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 8, multi: 6, mistakeChance: 0.15, blunderChance: 0.022, maxMistake: 0.7, maxBlunder: 1.6 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 10, multi: 6, mistakeChance: 0.13, blunderChance: 0.018, maxMistake: 0.65, maxBlunder: 1.4 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 12, multi: 6, mistakeChance: 0.11, blunderChance: 0.014, maxMistake: 0.6, maxBlunder: 1.3 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 15, multi: 6, mistakeChance: 0.085, blunderChance: 0.01, maxMistake: 0.5, maxBlunder: 1.2 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 18, multi: 6, mistakeChance: 0.065, blunderChance: 0.008, maxMistake: 0.4, maxBlunder: 1.0 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 6, mistakeChance: 0.05, blunderChance: 0.006, maxMistake: 0.35, maxBlunder: 0.9 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
