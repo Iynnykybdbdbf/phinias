@@ -5,13 +5,13 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.92, blunderChance: 0.20, maxMistake: 2.5, maxBlunder: 5.0 },
-  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.88, blunderChance: 0.17, maxMistake: 2.2, maxBlunder: 4.5 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.82, blunderChance: 0.14, maxMistake: 1.9, maxBlunder: 4.0 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.75, blunderChance: 0.11, maxMistake: 1.6, maxBlunder: 3.5 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.68, blunderChance: 0.09, maxMistake: 1.3, maxBlunder: 3.0 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.60, blunderChance: 0.07, maxMistake: 1.0, maxBlunder: 2.5 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.52, blunderChance: 0.06, maxMistake: 0.8, maxBlunder: 2.0 },
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.99, blunderChance: 0.32, maxMistake: 2.5, maxBlunder: 5.0 },
+  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.97, blunderChance: 0.28, maxMistake: 2.2, maxBlunder: 4.5 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.94, blunderChance: 0.24, maxMistake: 1.9, maxBlunder: 4.0 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.88, blunderChance: 0.20, maxMistake: 1.6, maxBlunder: 3.5 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.78, blunderChance: 0.15, maxMistake: 1.3, maxBlunder: 3.0 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.65, blunderChance: 0.10, maxMistake: 1.0, maxBlunder: 2.5 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.52, blunderChance: 0.07, maxMistake: 0.8, maxBlunder: 2.0 },
   { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.44, blunderChance: 0.05, maxMistake: 0.6, maxBlunder: 1.6 },
   { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.35, blunderChance: 0.04, maxMistake: 0.4, maxBlunder: 1.2 }
 ];
