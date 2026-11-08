@@ -189,11 +189,14 @@ export default function App() {
   }, [engineReady, thinkingTime, level]);
 
   useEffect(() => {
-    if (autoAnalyse && engineReady) {
+    // The opponent must always play automatically. The toggle only controls
+    // whether Phinias also prepares suggestions on the user's own turn.
+    const opponentTurn = gameRef.current.turn() !== myColor;
+    if (engineReady && (autoAnalyse || opponentTurn)) {
       const id = window.setTimeout(analyse, 250);
       return () => window.clearTimeout(id);
     }
-  }, [fen, autoAnalyse, engineReady, analyse]);
+  }, [fen, autoAnalyse, engineReady, analyse, myColor]);
 
   const legalTargets = useCallback((square: Square) => {
     return gameRef.current.moves({ square, verbose: true }).map(m => m.to as Square);
@@ -201,6 +204,9 @@ export default function App() {
 
   const makeMove = useCallback((from: Square, to: Square) => {
     try {
+      if (gameRef.current.turn() !== myColorRef.current) return false;
+      const movingPiece = gameRef.current.get(from);
+      if (!movingPiece || movingPiece.color !== myColorRef.current) return false;
       const move = gameRef.current.move({ from, to, promotion: "q" });
       if (!move) return false;
       historyRef.current.push(move.san);
