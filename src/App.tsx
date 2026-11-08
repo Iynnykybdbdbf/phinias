@@ -3,17 +3,17 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; eloLabel: string; skill: number; multi: number };
+type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 4 },
-  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 4 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 4 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 4 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 4 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 4 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 4 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 4 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 4 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.72, blunderChance: 0.12, maxMistake: 2.5, maxBlunder: 5.0 },
+  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.66, blunderChance: 0.10, maxMistake: 2.2, maxBlunder: 4.5 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.60, blunderChance: 0.09, maxMistake: 1.9, maxBlunder: 4.0 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.52, blunderChance: 0.07, maxMistake: 1.6, maxBlunder: 3.5 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.43, blunderChance: 0.06, maxMistake: 1.3, maxBlunder: 3.0 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.34, blunderChance: 0.045, maxMistake: 1.0, maxBlunder: 2.5 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.25, blunderChance: 0.03, maxMistake: 0.8, maxBlunder: 2.0 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.17, blunderChance: 0.02, maxMistake: 0.6, maxBlunder: 1.6 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.10, blunderChance: 0.01, maxMistake: 0.4, maxBlunder: 1.2 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -99,17 +99,36 @@ export default function App() {
             }
           }
           if (line.startsWith("bestmove")) {
-            // Use Stockfish's actual Skill Level decision. Previously we ignored
-            // its selected bestmove and picked from the strongest MultiPV lines,
-            // which made even the weakest levels play far too well.
-            const uci = line.split(" ")[1];
+            const engineMove = line.split(" ")[1];
+            const config = LEVELS[levelRef.current];
             const newestDepth = Math.max(0, ...[...candidatesRef.current.values()].map(c => c.depth));
-            const choices = [...candidatesRef.current.values()].filter(c => c.depth === newestDepth);
-            const bestScore = choices[0]?.score ?? 0;
-            if (uci && uci !== "(none)") {
-              const selectedLine = choices.find(c => c.move === uci);
-              setCandidate(selectedLine ?? { move: uci, score: bestScore, depth: newestDepth || depth });
+            const ranked = [...candidatesRef.current.entries()]
+              .filter(([, c]) => c.depth === newestDepth)
+              .sort(([rankA], [rankB]) => rankA - rankB)
+              .map(([, candidate]) => candidate);
+            const best = ranked[0];
+            let chosen = engineMove && engineMove !== "(none)"
+              ? (ranked.find(c => c.move === engineMove) ?? { move: engineMove, score: best?.score ?? 0, depth: newestDepth || depth })
+              : null;
+
+            // Deliberate human-like imperfections at EVERY level:
+            // normal inaccuracies are common; serious blunders are rare.
+            // The chance and permitted evaluation loss decrease with strength.
+            if (best && ranked.length > 1) {
+              const isBlunder = Math.random() < config.blunderChance;
+              const isMistake = !isBlunder && Math.random() < config.mistakeChance;
+              if (isBlunder || isMistake) {
+                const pool = ranked.slice(isBlunder ? 3 : 1).filter(candidate => {
+                  const loss = Math.abs(best.score - candidate.score);
+                  return loss >= 0.08 && loss <= (isBlunder ? config.maxBlunder : config.maxMistake);
+                });
+                if (pool.length) {
+                  // Prefer a reasonably inferior alternative, not always the worst move.
+                  chosen = pool[Math.floor(Math.random() * pool.length)];
+                }
+              }
             }
+            if (chosen) setCandidate(chosen);
             setAnalysing(false);
             setEngineStatus("Analyse abgeschlossen");
           }
