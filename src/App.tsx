@@ -5,14 +5,14 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; targetLoss: number; randomness: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 16, targetLoss: 300, randomness: 1.00 },
-  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 16, targetLoss: 220, randomness: 0.95 },
-  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 14, targetLoss: 160, randomness: 0.88 },
-  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, targetLoss: 110, randomness: 0.78 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 10, targetLoss: 65, randomness: 0.62 },
-  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 6, targetLoss: 30, randomness: 0.42 },
-  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 4, targetLoss: 12, randomness: 0.24 },
-  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 2, targetLoss: 3, randomness: 0.08 },
+  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 16, targetLoss: 90, randomness: 0.72 },
+  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 16, targetLoss: 70, randomness: 0.65 },
+  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 14, targetLoss: 55, randomness: 0.58 },
+  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, targetLoss: 40, randomness: 0.50 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 10, targetLoss: 28, randomness: 0.42 },
+  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 6, targetLoss: 18, randomness: 0.32 },
+  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 4, targetLoss: 10, randomness: 0.22 },
+  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 2, targetLoss: 4, randomness: 0.10 },
   { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 1, targetLoss: 0, randomness: 0 }
 ];
 const PIECES: Record<string, string> = {
