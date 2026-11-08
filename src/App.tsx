@@ -5,15 +5,15 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.65, blunderChance: 0.18, maxMistake: 3.0, maxBlunder: 7.0 },
-  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.59, blunderChance: 0.15, maxMistake: 2.7, maxBlunder: 6.0 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.53, blunderChance: 0.12, maxMistake: 2.4, maxBlunder: 5.2 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.46, blunderChance: 0.10, maxMistake: 2.1, maxBlunder: 4.6 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.37, blunderChance: 0.075, maxMistake: 1.7, maxBlunder: 3.8 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.29, blunderChance: 0.055, maxMistake: 1.3, maxBlunder: 3.0 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.22, blunderChance: 0.035, maxMistake: 1.0, maxBlunder: 2.4 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 16, multi: 8, mistakeChance: 0.16, blunderChance: 0.02, maxMistake: 0.75, maxBlunder: 1.8 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.10, blunderChance: 0.01, maxMistake: 0.55, maxBlunder: 1.4 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 3, multi: 8, mistakeChance: 0.46, blunderChance: 0.09, maxMistake: 1.8, maxBlunder: 3.5 },
+  { name: "Schwach", eloLabel: "250–350", skill: 4, multi: 8, mistakeChance: 0.42, blunderChance: 0.08, maxMistake: 1.6, maxBlunder: 3.2 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 5, multi: 8, mistakeChance: 0.38, blunderChance: 0.07, maxMistake: 1.4, maxBlunder: 2.8 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 7, multi: 8, mistakeChance: 0.33, blunderChance: 0.06, maxMistake: 1.2, maxBlunder: 2.5 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 9, multi: 8, mistakeChance: 0.28, blunderChance: 0.05, maxMistake: 1.0, maxBlunder: 2.2 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 11, multi: 8, mistakeChance: 0.23, blunderChance: 0.04, maxMistake: 0.9, maxBlunder: 2.0 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 14, multi: 8, mistakeChance: 0.18, blunderChance: 0.03, maxMistake: 0.75, maxBlunder: 1.7 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.14, blunderChance: 0.02, maxMistake: 0.6, maxBlunder: 1.4 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.11, blunderChance: 0.015, maxMistake: 0.5, maxBlunder: 1.2 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -50,9 +50,6 @@ export default function App() {
   const candidatesRef = useRef<Map<number, Candidate>>(new Map());
   const levelRef = useRef(level);
   levelRef.current = level;
-  const myColorRef = useRef(myColor);
-  myColorRef.current = myColor;
-  const analysisFenRef = useRef(gameRef.current.fen());
 
   const sync = useCallback(() => {
     setFen(gameRef.current.fen());
@@ -104,63 +101,36 @@ export default function App() {
           if (line.startsWith("bestmove")) {
             const engineMove = line.split(" ")[1];
             const config = LEVELS[levelRef.current];
-            // Ignore stale results if the position changed while Stockfish was thinking.
-            if (gameRef.current.fen() !== analysisFenRef.current) return;
             const newestDepth = Math.max(0, ...[...candidatesRef.current.values()].map(c => c.depth));
             const ranked = [...candidatesRef.current.entries()]
               .filter(([, c]) => c.depth === newestDepth)
               .sort(([rankA], [rankB]) => rankA - rankB)
-              .map(([, item]) => item);
+              .map(([, candidate]) => candidate);
             const best = ranked[0];
-            let chosen = best ?? (engineMove && engineMove !== "(none)"
-              ? { move: engineMove, score: 0, depth: newestDepth || depth }
-              : null);
+            let chosen = engineMove && engineMove !== "(none)"
+              ? (ranked.find(c => c.move === engineMove) ?? { move: engineMove, score: best?.score ?? 0, depth: newestDepth || depth })
+              : null;
 
-            // Human-like imperfection applies to BOTH the opponent's move and
-            // the suggested move for the user's side. Lower levels may choose
-            // substantially weaker candidate lines, including occasional blunders.
+            // Keep every level competitive: only choose a weaker engine line
+            // when its evaluation loss stays within this level's realistic range.
+            // Lower levels make these mistakes more often and can lose more,
+            // while stronger levels stay close to the best move.
             if (best && ranked.length > 1) {
               const isBlunder = Math.random() < config.blunderChance;
               const isMistake = !isBlunder && Math.random() < config.mistakeChance;
               if (isBlunder || isMistake) {
                 const maxLoss = isBlunder ? config.maxBlunder : config.maxMistake;
                 const alternatives = ranked.slice(1).filter(c =>
-                  best.score - c.score >= 0 && best.score - c.score <= maxLoss
+                  Math.abs(best.score - c.score) <= maxLoss
                 );
                 if (alternatives.length > 0) {
-                  // Prefer weaker alternatives more often at beginner levels.
-                  const weights = alternatives.map((_, i) => Math.pow(i + 1, 1.5));
-                  const total = weights.reduce((sum, weight) => sum + weight, 0);
-                  let pick = Math.random() * total;
-                  let index = 0;
-                  for (; index < weights.length - 1 && (pick -= weights[index]) > 0; index++) {}
-                  chosen = alternatives[index];
+                  chosen = alternatives[Math.floor(Math.random() * alternatives.length)];
                 }
               }
             }
-
-            const isOpponentTurn = gameRef.current.turn() !== myColorRef.current;
-            if (isOpponentTurn && chosen) {
-              try {
-                const from = chosen.move.slice(0, 2) as Square;
-                const to = chosen.move.slice(2, 4) as Square;
-                const promotion = (chosen.move[4] || "q") as "q" | "r" | "b" | "n";
-                const played = gameRef.current.move({ from, to, promotion });
-                if (played) {
-                  setLastMove({ from, to });
-                  sync();
-                  setEngineStatus("Gegner hat gezogen");
-                } else {
-                  setEngineStatus("Gegnerzug konnte nicht ausgeführt werden");
-                }
-              } catch {
-                setEngineStatus("Gegnerzug konnte nicht ausgeführt werden");
-              }
-            } else if (chosen) {
-              setCandidate(chosen);
-              setEngineStatus("Zugvorschlag bereit");
-            }
+            if (chosen) setCandidate(chosen);
             setAnalysing(false);
+            setEngineStatus("Analyse abgeschlossen");
           }
         };
         worker.onerror = () => setEngineStatus("Engine konnte nicht gestartet werden");
@@ -183,20 +153,16 @@ export default function App() {
     worker.postMessage(`setoption name Skill Level value ${config.skill}`);
     worker.postMessage("setoption name UCI_LimitStrength value false");
     worker.postMessage(`setoption name MultiPV value ${config.multi}`);
-    analysisFenRef.current = gameRef.current.fen();
-    worker.postMessage(`position fen ${analysisFenRef.current}`);
+    worker.postMessage(`position fen ${gameRef.current.fen()}`);
     worker.postMessage(`go movetime ${thinkingTime}`);
   }, [engineReady, thinkingTime, level]);
 
   useEffect(() => {
-    // The opponent must always play automatically. The toggle only controls
-    // whether Phinias also prepares suggestions on the user's own turn.
-    const opponentTurn = gameRef.current.turn() !== myColor;
-    if (engineReady && (autoAnalyse || opponentTurn)) {
+    if (autoAnalyse && engineReady) {
       const id = window.setTimeout(analyse, 250);
       return () => window.clearTimeout(id);
     }
-  }, [fen, autoAnalyse, engineReady, analyse, myColor]);
+  }, [fen, autoAnalyse, engineReady, analyse]);
 
   const legalTargets = useCallback((square: Square) => {
     return gameRef.current.moves({ square, verbose: true }).map(m => m.to as Square);
@@ -204,9 +170,6 @@ export default function App() {
 
   const makeMove = useCallback((from: Square, to: Square) => {
     try {
-      if (gameRef.current.turn() !== myColorRef.current) return false;
-      const movingPiece = gameRef.current.get(from);
-      if (!movingPiece || movingPiece.color !== myColorRef.current) return false;
       const move = gameRef.current.move({ from, to, promotion: "q" });
       if (!move) return false;
       historyRef.current.push(move.san);
@@ -217,10 +180,9 @@ export default function App() {
   }, [sync]);
 
   const onSquareClick = (square: Square) => {
-    if (gameRef.current.turn() !== myColorRef.current || analysing) return;
     if (selected && targets.includes(square)) { makeMove(selected, square); return; }
     const piece = gameRef.current.get(square);
-    if (piece && piece.color === myColorRef.current) {
+    if (piece) {
       setSelected(square);
       setTargets(legalTargets(square));
     } else {
@@ -324,9 +286,9 @@ export default function App() {
           <div className="card-heading"><div className="heading-icon"><Activity size={17}/></div><div><h2>Engine-Analyse</h2><p>Powered by Stockfish</p></div><span className="live-tag">LIVE</span></div>
           <div className="evaluation-row"><div><span className="eyebrow">BEWERTUNG</span><div className="evaluation">{evalText}</div></div><div className="depth-box"><span className="eyebrow">TIEFE</span><strong>{depth || "–"}</strong></div></div>
           <div className="suggestion-box">
-            <div className="suggestion-top"><span className="suggestion-label"><Sparkles size={14}/> DEIN ZUGVORSCHLAG</span>{analysing && <span className="thinking">Denkt nach…</span>}</div>
+            <div className="suggestion-top"><span className="suggestion-label"><Sparkles size={14}/> BESTER ZUG</span>{analysing && <span className="thinking">Denkt nach…</span>}</div>
             <div className="suggestion-move">{candidate ? `${candidate.move.slice(0,2)} → ${candidate.move.slice(2,4)}` : "Noch kein Vorschlag"}</div>
-            <p>{candidate ? `Bewertung ${candidate.score >= 0 ? "+" : ""}${candidate.score.toFixed(2)} · Tiefe ${candidate.depth}` : "Der Vorschlag berücksichtigt die gewählte menschliche Spielstärke."}</p>
+            <p>{candidate ? `Bewertung ${candidate.score >= 0 ? "+" : ""}${candidate.score.toFixed(2)} · Tiefe ${candidate.depth}` : "Starte die Analyse, um einen Zug zu sehen."}</p>
             <button className="primary-button analyze-button" onClick={analyse} disabled={!engineReady || analysing || gameRef.current.isGameOver()}><Zap size={16}/> {analysing ? "Analysiert …" : "Stellung analysieren"}</button>
           </div>
           <div className="toggle-row"><div><strong>Zugvorschlag anzeigen</strong><span>Pfeil auf dem Brett</span></div><button className={`switch ${showHints?"on":""}`} onClick={()=>setShowHints(v=>!v)} aria-label="Zugvorschläge umschalten"><span/></button></div>
