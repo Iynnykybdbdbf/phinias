@@ -265,8 +265,8 @@ export default function App() {
               </button>;
             }))}
             {arrow && <svg className="move-arrow" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <defs><marker id="arrowhead" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#35c98a"/></marker></defs>
-              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke="#35c98a" strokeWidth="1.35" strokeLinecap="round" markerEnd="url(#arrowhead)" opacity=".9"/>
+              <defs><marker id="arrowhead" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" fill="#777777"/></marker></defs>
+              <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2} stroke="#777777" strokeWidth="1.35" strokeLinecap="round" markerEnd="url(#arrowhead)" opacity=".9"/>
             </svg>}
           </div>
         </div>
