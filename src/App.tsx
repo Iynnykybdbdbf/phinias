@@ -3,21 +3,20 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
+type Level = { name: string; skill: number; elo: number; multi: number; blunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 3, multi: 8, mistakeChance: 0.46, blunderChance: 0.09, maxMistake: 1.8, maxBlunder: 3.5 },
-  { name: "Schwach", eloLabel: "250–350", skill: 4, multi: 8, mistakeChance: 0.42, blunderChance: 0.08, maxMistake: 1.6, maxBlunder: 3.2 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 5, multi: 8, mistakeChance: 0.38, blunderChance: 0.07, maxMistake: 1.4, maxBlunder: 2.8 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 7, multi: 8, mistakeChance: 0.33, blunderChance: 0.06, maxMistake: 1.2, maxBlunder: 2.5 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 9, multi: 8, mistakeChance: 0.28, blunderChance: 0.05, maxMistake: 1.0, maxBlunder: 2.2 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 11, multi: 8, mistakeChance: 0.23, blunderChance: 0.04, maxMistake: 0.9, maxBlunder: 2.0 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 14, multi: 8, mistakeChance: 0.18, blunderChance: 0.03, maxMistake: 0.75, maxBlunder: 1.7 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.14, blunderChance: 0.02, maxMistake: 0.6, maxBlunder: 1.4 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.11, blunderChance: 0.015, maxMistake: 0.5, maxBlunder: 1.2 }
+  { name: "Sehr schwach", skill: 0, elo: 1320, multi: 5, blunder: 0.68 },
+  { name: "Schwach", skill: 2, elo: 1450, multi: 4, blunder: 0.48 },
+  { name: "Anfänger", skill: 4, elo: 1600, multi: 3, blunder: 0.30 },
+  { name: "Mittelmäßig", skill: 7, elo: 1850, multi: 3, blunder: 0.18 },
+  { name: "Fortgeschritten", skill: 11, elo: 2150, multi: 2, blunder: 0.10 },
+  { name: "Stark", skill: 15, elo: 2450, multi: 2, blunder: 0.04 },
+  { name: "Sehr stark", skill: 18, elo: 2750, multi: 1, blunder: 0.01 },
+  { name: "Maximale Stärke", skill: 20, elo: 3190, multi: 1, blunder: 0 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
-  bk:"♔", bq:"♕", br:"♖", bb:"♗", bn:"♘", bp:"♙"
+  bk:"♚", bq:"♛", br:"♜", bb:"♝", bn:"♞", bp:"♟"
 };
 const FILES = "abcdefgh";
 const toSquare = (file: number, rank: number) => `${FILES[file]}${rank}` as Square;
@@ -29,7 +28,7 @@ export default function App() {
   const [fen, setFen] = useState(gameRef.current.fen());
   const [orientation, setOrientation] = useState<"w" | "b">("w");
   const [myColor, setMyColor] = useState<"w" | "b">("w");
-  const [level, setLevel] = useState(4);
+  const [level, setLevel] = useState(3);
   const [showHints, setShowHints] = useState(true);
   const [autoAnalyse, setAutoAnalyse] = useState(true);
   const [thinkingTime, setThinkingTime] = useState(1200);
@@ -99,36 +98,21 @@ export default function App() {
             }
           }
           if (line.startsWith("bestmove")) {
-            const engineMove = line.split(" ")[1];
-            const config = LEVELS[levelRef.current];
-            const newestDepth = Math.max(0, ...[...candidatesRef.current.values()].map(c => c.depth));
-            const ranked = [...candidatesRef.current.entries()]
-              .filter(([, c]) => c.depth === newestDepth)
-              .sort(([rankA], [rankB]) => rankA - rankB)
-              .map(([, candidate]) => candidate);
-            const best = ranked[0];
-            let chosen = engineMove && engineMove !== "(none)"
-              ? (ranked.find(c => c.move === engineMove) ?? { move: engineMove, score: best?.score ?? 0, depth: newestDepth || depth })
-              : null;
-
-            // Keep every level competitive: only choose a weaker engine line
-            // when its evaluation loss stays within this level's realistic range.
-            // Lower levels make these mistakes more often and can lose more,
-            // while stronger levels stay close to the best move.
-            if (best && ranked.length > 1) {
-              const isBlunder = Math.random() < config.blunderChance;
-              const isMistake = !isBlunder && Math.random() < config.mistakeChance;
-              if (isBlunder || isMistake) {
-                const maxLoss = isBlunder ? config.maxBlunder : config.maxMistake;
-                const alternatives = ranked.slice(1).filter(c =>
-                  Math.abs(best.score - c.score) <= maxLoss
-                );
-                if (alternatives.length > 0) {
-                  chosen = alternatives[Math.floor(Math.random() * alternatives.length)];
-                }
-              }
+            const levelNow = LEVELS[levelRef.current];
+            const choices = [...candidatesRef.current.entries()].sort((a,b) => a[0]-b[0]).map(([,v]) => v);
+            if (choices.length) {
+              const maxRank = Math.min(choices.length, levelNow.multi);
+              const pool = choices.slice(0, maxRank);
+              const weights = pool.map((_, i) => Math.pow(levelNow.blunder === 0 ? 0.001 : levelNow.blunder, i));
+              const total = weights.reduce((a,b) => a+b, 0);
+              let roll = Math.random() * total;
+              let index = 0;
+              for (let i=0;i<weights.length;i++) { roll -= weights[i]; if (roll <= 0) { index=i; break; } }
+              setCandidate(pool[index]);
+            } else {
+              const uci = line.split(" ")[1];
+              if (uci && uci !== "(none)") setCandidate({ move: uci, score: 0, depth });
             }
-            if (chosen) setCandidate(chosen);
             setAnalysing(false);
             setEngineStatus("Analyse abgeschlossen");
           }
@@ -151,7 +135,8 @@ export default function App() {
     worker.postMessage("stop");
     worker.postMessage("ucinewgame");
     worker.postMessage(`setoption name Skill Level value ${config.skill}`);
-    worker.postMessage("setoption name UCI_LimitStrength value false");
+    worker.postMessage("setoption name UCI_LimitStrength value true");
+    worker.postMessage(`setoption name UCI_Elo value ${config.elo}`);
     worker.postMessage(`setoption name MultiPV value ${config.multi}`);
     worker.postMessage(`position fen ${gameRef.current.fen()}`);
     worker.postMessage(`go movetime ${thinkingTime}`);
@@ -250,7 +235,7 @@ export default function App() {
             {boardRanks.map((rank, ri) => boardFiles.map((file, fi) => {
               const square = toSquare(file, rank);
               const piece = gameRef.current.get(square);
-              const isLight = (file + rank) % 2 === 0;
+              const isLight = (file + rank) % 2 === 1;
               const isLast = lastMove?.from === square || lastMove?.to === square;
               return <button key={square} role="gridcell" aria-label={square} draggable={!!piece}
                 onDragStart={e => { if (!piece) {e.preventDefault();return;} e.dataTransfer.setData("text/plain", square); setSelected(square); setTargets(legalTargets(square)); }}
@@ -298,8 +283,8 @@ export default function App() {
         <section className="panel-card" id="settings">
           <div className="section-title"><Settings2 size={16}/><h2>Einstellungen</h2></div>
           <div className="setting-block">
-            <div className="setting-label"><strong>Spielstärke</strong><span className="level-value">{LEVELS[level].name} · {LEVELS[level].eloLabel} Elo</span></div>
-            <input className="strength-slider" type="range" min="0" max="8" step="1" value={level} onChange={e=>setLevel(Number(e.target.value))}/>
+            <div className="setting-label"><strong>Spielstärke</strong><span className="level-value">{LEVELS[level].name}</span></div>
+            <input className="strength-slider" type="range" min="0" max="7" step="1" value={level} onChange={e=>setLevel(Number(e.target.value))}/>
             <div className="range-labels"><span>Einfach</span><span>Maximal</span></div>
             <div className="level-dots">{LEVELS.map((l,i)=><button key={l.name} className={i===level?"active":""} onClick={()=>setLevel(i)} aria-label={l.name}/>)}</div>
           </div>
