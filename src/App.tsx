@@ -3,17 +3,17 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; maxMistake: number; maxBlunder: number };
+type Level = { name: string; eloLabel: string; skill: number; multi: number; mistakeChance: number; blunderChance: number; randomMoveChance: number; maxMistake: number; maxBlunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.99, blunderChance: 0.32, maxMistake: 2.5, maxBlunder: 5.0 },
-  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.97, blunderChance: 0.28, maxMistake: 2.2, maxBlunder: 4.5 },
-  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.94, blunderChance: 0.24, maxMistake: 1.9, maxBlunder: 4.0 },
-  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.88, blunderChance: 0.20, maxMistake: 1.6, maxBlunder: 3.5 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.78, blunderChance: 0.15, maxMistake: 1.3, maxBlunder: 3.0 },
-  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.65, blunderChance: 0.10, maxMistake: 1.0, maxBlunder: 2.5 },
-  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.52, blunderChance: 0.07, maxMistake: 0.8, maxBlunder: 2.0 },
-  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.44, blunderChance: 0.05, maxMistake: 0.6, maxBlunder: 1.6 },
-  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.35, blunderChance: 0.04, maxMistake: 0.4, maxBlunder: 1.2 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 8, mistakeChance: 0.99, blunderChance: 0.32, randomMoveChance: 0.35, maxMistake: 2.5, maxBlunder: 5.0 },
+  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 8, mistakeChance: 0.97, blunderChance: 0.28, randomMoveChance: 0.25, maxMistake: 2.2, maxBlunder: 4.5 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 8, mistakeChance: 0.94, blunderChance: 0.24, randomMoveChance: 0.16, maxMistake: 1.9, maxBlunder: 4.0 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 8, mistakeChance: 0.88, blunderChance: 0.20, randomMoveChance: 0.10, maxMistake: 1.6, maxBlunder: 3.5 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 8, mistakeChance: 0.78, blunderChance: 0.15, randomMoveChance: 0.06, maxMistake: 1.3, maxBlunder: 3.0 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 8, mistakeChance: 0.65, blunderChance: 0.10, randomMoveChance: 0.03, maxMistake: 1.0, maxBlunder: 2.5 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 8, mistakeChance: 0.52, blunderChance: 0.07, randomMoveChance: 0.02, maxMistake: 0.8, maxBlunder: 2.0 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 8, mistakeChance: 0.44, blunderChance: 0.05, randomMoveChance: 0.01, maxMistake: 0.6, maxBlunder: 1.6 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 8, mistakeChance: 0.35, blunderChance: 0.04, randomMoveChance: 0.005, maxMistake: 0.4, maxBlunder: 1.2 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -111,12 +111,17 @@ export default function App() {
               ? (ranked.find(c => c.move === engineMove) ?? { move: engineMove, score: best?.score ?? 0, depth: newestDepth || depth })
               : null;
 
-            // Make the selected strength visible in practice: deliberately choose
-            // an inferior MultiPV line often, including at the highest level.
-            // A blunder selects a much lower-ranked line; an ordinary mistake
-            // skips the top two lines where possible. No tiny centipawn window
-            // can silently cancel the configured mistake chance.
-            if (best && ranked.length > 1) {
+            // Beginner levels sometimes ignore engine rankings and choose
+            // from ALL legal moves, creating real beginner-style mistakes.
+            const legalMoves = gameRef.current.moves({ verbose: true });
+            if (legalMoves.length > 0 && Math.random() < config.randomMoveChance) {
+              const move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+              chosen = {
+                move: `${move.from}${move.to}${move.promotion ?? ""}`,
+                score: (best?.score ?? 0) - 3,
+                depth: newestDepth || depth
+              };
+            } else if (best && ranked.length > 1) {
               const isBlunder = Math.random() < config.blunderChance;
               const isMistake = !isBlunder && Math.random() < config.mistakeChance;
               if (isBlunder || isMistake) {
