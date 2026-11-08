@@ -3,17 +3,17 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; blunder: number };
+type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; targetLoss: number; randomness: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 8, blunder: 0.78 },
-  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 7, blunder: 0.64 },
-  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 6, blunder: 0.50 },
-  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 5, blunder: 0.36 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 4, blunder: 0.22 },
-  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 3, blunder: 0.12 },
-  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 2, blunder: 0.06 },
-  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 1, blunder: 0.02 },
-  { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 1, blunder: 0 }
+  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 16, targetLoss: 300, randomness: 1.00 },
+  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 16, targetLoss: 220, randomness: 0.95 },
+  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 14, targetLoss: 160, randomness: 0.88 },
+  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, targetLoss: 110, randomness: 0.78 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 10, targetLoss: 65, randomness: 0.62 },
+  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 6, targetLoss: 30, randomness: 0.42 },
+  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 4, targetLoss: 12, randomness: 0.24 },
+  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 2, targetLoss: 3, randomness: 0.08 },
+  { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 1, targetLoss: 0, randomness: 0 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -104,12 +104,25 @@ export default function App() {
             if (choices.length) {
               const maxRank = Math.min(choices.length, levelNow.multi);
               const pool = choices.slice(0, maxRank);
-              const weights = pool.map((_, i) => Math.pow(levelNow.blunder === 0 ? 0.001 : levelNow.blunder, i));
-              const total = weights.reduce((a,b) => a+b, 0);
+              const bestScore = pool[0].score;
+              // Lower levels deliberately choose less accurate engine alternatives.
+              // targetLoss is the desired evaluation drop from the best candidate, in pawns.
+              const weighted = pool.map((move, i) => {
+                const loss = Math.max(0, bestScore - move.score);
+                const distance = Math.abs(loss - levelNow.targetLoss);
+                const tolerance = Math.max(0.18, levelNow.targetLoss * 0.55);
+                const closeness = Math.exp(-distance / tolerance);
+                const rankBias = Math.exp(-i * (1 - levelNow.randomness) * 1.8);
+                return { move, weight: (0.08 + closeness) * rankBias };
+              });
+              const total = weighted.reduce((sum, item) => sum + item.weight, 0);
               let roll = Math.random() * total;
-              let index = 0;
-              for (let i=0;i<weights.length;i++) { roll -= weights[i]; if (roll <= 0) { index=i; break; } }
-              setCandidate(pool[index]);
+              let chosen = weighted[0].move;
+              for (const item of weighted) {
+                roll -= item.weight;
+                if (roll <= 0) { chosen = item.move; break; }
+              }
+              setCandidate(chosen);
             } else {
               const uci = line.split(" ")[1];
               if (uci && uci !== "(none)") setCandidate({ move: uci, score: 0, depth });
