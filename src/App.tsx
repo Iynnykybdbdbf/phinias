@@ -5,12 +5,12 @@ import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Spa
 type Candidate = { move: string; score: number; depth: number };
 type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; mistakeChance: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.60 },
-  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.52 },
-  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 12, mistakeChance: 0.44 },
-  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, mistakeChance: 0.35 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 12, mistakeChance: 0.27 },
-  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 12, mistakeChance: 0.19 },
+  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.36 },
+  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.32 },
+  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 12, mistakeChance: 0.28 },
+  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, mistakeChance: 0.24 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 12, mistakeChance: 0.20 },
+  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 12, mistakeChance: 0.16 },
   { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 12, mistakeChance: 0.12 },
   { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 12, mistakeChance: 0.08 },
   { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 12, mistakeChance: 0.05 }
@@ -113,7 +113,7 @@ export default function App() {
               // Every level can make mistakes. Lower levels do so more often
               // and may choose a move that is further from the engine's best line.
               if (pool.length > 1 && Math.random() < levelNow.mistakeChance) {
-                const maxLossByLevel = [3.0, 2.6, 2.2, 1.8, 1.5, 1.2, 0.9, 0.7, 0.55][levelRef.current];
+                const maxLossByLevel = [1.5, 1.3, 1.15, 1.0, 0.85, 0.7, 0.55, 0.4, 0.3][levelRef.current];
                 const alternatives = pool.slice(1).filter(move => {
                   const loss = best.score - move.score;
                   return loss >= 0.05 && loss <= maxLossByLevel;
