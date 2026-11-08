@@ -3,20 +3,21 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; skill: number; elo: number; multi: number; blunder: number };
+type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; blunder: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", skill: 0, elo: 1320, multi: 5, blunder: 0.68 },
-  { name: "Schwach", skill: 2, elo: 1450, multi: 4, blunder: 0.48 },
-  { name: "Anfänger", skill: 4, elo: 1600, multi: 3, blunder: 0.30 },
-  { name: "Mittelmäßig", skill: 7, elo: 1850, multi: 3, blunder: 0.18 },
-  { name: "Fortgeschritten", skill: 11, elo: 2150, multi: 2, blunder: 0.10 },
-  { name: "Stark", skill: 15, elo: 2450, multi: 2, blunder: 0.04 },
-  { name: "Sehr stark", skill: 18, elo: 2750, multi: 1, blunder: 0.01 },
-  { name: "Maximale Stärke", skill: 20, elo: 3190, multi: 1, blunder: 0 }
+  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 8, blunder: 0.78 },
+  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 7, blunder: 0.64 },
+  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 6, blunder: 0.50 },
+  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 5, blunder: 0.36 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 4, blunder: 0.22 },
+  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 3, blunder: 0.12 },
+  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 2, blunder: 0.06 },
+  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 1, blunder: 0.02 },
+  { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 1, blunder: 0 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
-  bk:"♚", bq:"♛", br:"♜", bb:"♝", bn:"♞", bp:"♟"
+  bk:"♔", bq:"♕", br:"♖", bb:"♗", bn:"♘", bp:"♙"
 };
 const FILES = "abcdefgh";
 const toSquare = (file: number, rank: number) => `${FILES[file]}${rank}` as Square;
@@ -28,7 +29,7 @@ export default function App() {
   const [fen, setFen] = useState(gameRef.current.fen());
   const [orientation, setOrientation] = useState<"w" | "b">("w");
   const [myColor, setMyColor] = useState<"w" | "b">("w");
-  const [level, setLevel] = useState(3);
+  const [level, setLevel] = useState(4);
   const [showHints, setShowHints] = useState(true);
   const [autoAnalyse, setAutoAnalyse] = useState(true);
   const [thinkingTime, setThinkingTime] = useState(1200);
@@ -136,7 +137,7 @@ export default function App() {
     worker.postMessage("ucinewgame");
     worker.postMessage(`setoption name Skill Level value ${config.skill}`);
     worker.postMessage("setoption name UCI_LimitStrength value true");
-    worker.postMessage(`setoption name UCI_Elo value ${config.elo}`);
+    worker.postMessage(`setoption name UCI_Elo value ${config.engineElo}`);
     worker.postMessage(`setoption name MultiPV value ${config.multi}`);
     worker.postMessage(`position fen ${gameRef.current.fen()}`);
     worker.postMessage(`go movetime ${thinkingTime}`);
@@ -235,7 +236,7 @@ export default function App() {
             {boardRanks.map((rank, ri) => boardFiles.map((file, fi) => {
               const square = toSquare(file, rank);
               const piece = gameRef.current.get(square);
-              const isLight = (file + rank) % 2 === 1;
+              const isLight = (file + rank) % 2 === 0;
               const isLast = lastMove?.from === square || lastMove?.to === square;
               return <button key={square} role="gridcell" aria-label={square} draggable={!!piece}
                 onDragStart={e => { if (!piece) {e.preventDefault();return;} e.dataTransfer.setData("text/plain", square); setSelected(square); setTargets(legalTargets(square)); }}
@@ -283,8 +284,8 @@ export default function App() {
         <section className="panel-card" id="settings">
           <div className="section-title"><Settings2 size={16}/><h2>Einstellungen</h2></div>
           <div className="setting-block">
-            <div className="setting-label"><strong>Spielstärke</strong><span className="level-value">{LEVELS[level].name}</span></div>
-            <input className="strength-slider" type="range" min="0" max="7" step="1" value={level} onChange={e=>setLevel(Number(e.target.value))}/>
+            <div className="setting-label"><strong>Spielstärke</strong><span className="level-value">{LEVELS[level].name} · {LEVELS[level].eloLabel} Elo</span></div>
+            <input className="strength-slider" type="range" min="0" max="8" step="1" value={level} onChange={e=>setLevel(Number(e.target.value))}/>
             <div className="range-labels"><span>Einfach</span><span>Maximal</span></div>
             <div className="level-dots">{LEVELS.map((l,i)=><button key={l.name} className={i===level?"active":""} onClick={()=>setLevel(i)} aria-label={l.name}/>)}</div>
           </div>
