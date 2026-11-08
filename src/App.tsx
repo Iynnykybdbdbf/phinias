@@ -140,7 +140,7 @@ export default function App() {
     worker.postMessage(`setoption name MultiPV value ${config.multi}`);
     worker.postMessage(`position fen ${gameRef.current.fen()}`);
     worker.postMessage(`go movetime ${thinkingTime}`);
-  }, [engineReady, thinkingTime, level]);
+  }, [engineReady, thinkingTime]);
 
   useEffect(() => {
     if (autoAnalyse && engineReady) {
