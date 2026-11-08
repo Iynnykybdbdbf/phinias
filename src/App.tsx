@@ -3,17 +3,17 @@ import { Chess, type Square } from "chess.js";
 import { Activity, ArrowLeft, ArrowRight, ChevronDown, RotateCcw, Settings2, Sparkles, Upload, Zap } from "lucide-react";
 
 type Candidate = { move: string; score: number; depth: number };
-type Level = { name: string; eloLabel: string; engineElo: number; skill: number; multi: number; mistakeChance: number };
+type Level = { name: string; eloLabel: string; skill: number; multi: number };
 const LEVELS: Level[] = [
-  { name: "Sehr schwach", eloLabel: "150–200", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.36 },
-  { name: "Schwach", eloLabel: "250–350", engineElo: 1320, skill: 0, multi: 12, mistakeChance: 0.32 },
-  { name: "Anfänger", eloLabel: "350–450", engineElo: 1320, skill: 1, multi: 12, mistakeChance: 0.28 },
-  { name: "Mittelmäßig", eloLabel: "450–650", engineElo: 1320, skill: 3, multi: 12, mistakeChance: 0.24 },
-  { name: "Fortgeschritten", eloLabel: "800–1100", engineElo: 1320, skill: 6, multi: 12, mistakeChance: 0.20 },
-  { name: "Stark", eloLabel: "1200–1600", engineElo: 1500, skill: 10, multi: 12, mistakeChance: 0.16 },
-  { name: "Sehr stark", eloLabel: "1800–2200", engineElo: 1900, skill: 14, multi: 12, mistakeChance: 0.12 },
-  { name: "Experte", eloLabel: "2300–2500", engineElo: 2300, skill: 18, multi: 12, mistakeChance: 0.08 },
-  { name: "Profi", eloLabel: "2600+", engineElo: 2850, skill: 20, multi: 12, mistakeChance: 0.05 }
+  { name: "Sehr schwach", eloLabel: "150–200", skill: 0, multi: 4 },
+  { name: "Schwach", eloLabel: "250–350", skill: 1, multi: 4 },
+  { name: "Anfänger", eloLabel: "350–450", skill: 2, multi: 4 },
+  { name: "Mittelmäßig", eloLabel: "450–650", skill: 4, multi: 4 },
+  { name: "Fortgeschritten", eloLabel: "800–1100", skill: 7, multi: 4 },
+  { name: "Stark", eloLabel: "1200–1600", skill: 10, multi: 4 },
+  { name: "Sehr stark", eloLabel: "1800–2200", skill: 13, multi: 4 },
+  { name: "Experte", eloLabel: "2300–2500", skill: 17, multi: 4 },
+  { name: "Profi", eloLabel: "2600+", skill: 20, multi: 4 }
 ];
 const PIECES: Record<string, string> = {
   wk:"♔", wq:"♕", wr:"♖", wb:"♗", wn:"♘", wp:"♙",
@@ -99,37 +99,16 @@ export default function App() {
             }
           }
           if (line.startsWith("bestmove")) {
-            const levelNow = LEVELS[levelRef.current];
+            // Use Stockfish's actual Skill Level decision. Previously we ignored
+            // its selected bestmove and picked from the strongest MultiPV lines,
+            // which made even the weakest levels play far too well.
+            const uci = line.split(" ")[1];
             const newestDepth = Math.max(0, ...[...candidatesRef.current.values()].map(c => c.depth));
-            const choices = [...candidatesRef.current.entries()]
-              .sort((a,b) => a[0]-b[0])
-              .map(([,v]) => v)
-              .filter(c => c.depth === newestDepth);
-            if (choices.length) {
-              const pool = choices.slice(0, Math.min(choices.length, levelNow.multi));
-              const best = pool[0];
-              let chosen = best;
-
-              // Every level can make mistakes. Lower levels do so more often
-              // and may choose a move that is further from the engine's best line.
-              if (pool.length > 1 && Math.random() < levelNow.mistakeChance) {
-                const maxLossByLevel = [1.5, 1.3, 1.15, 1.0, 0.85, 0.7, 0.55, 0.4, 0.3][levelRef.current];
-                const alternatives = pool.slice(1).filter(move => {
-                  const loss = best.score - move.score;
-                  return loss >= 0.05 && loss <= maxLossByLevel;
-                });
-                // If the score window has no alternative, use the next ranked
-                // legal engine line rather than silently always playing best.
-                const fallback = pool.slice(1).filter(move => move.move !== best.move);
-                const available = alternatives.length ? alternatives : fallback;
-                if (available.length) {
-                  chosen = available[Math.floor(Math.random() * available.length)];
-                }
-              }
-              setCandidate(chosen);
-            } else {
-              const uci = line.split(" ")[1];
-              if (uci && uci !== "(none)") setCandidate({ move: uci, score: 0, depth });
+            const choices = [...candidatesRef.current.values()].filter(c => c.depth === newestDepth);
+            const bestScore = choices[0]?.score ?? 0;
+            if (uci && uci !== "(none)") {
+              const selectedLine = choices.find(c => c.move === uci);
+              setCandidate(selectedLine ?? { move: uci, score: bestScore, depth: newestDepth || depth });
             }
             setAnalysing(false);
             setEngineStatus("Analyse abgeschlossen");
@@ -153,8 +132,7 @@ export default function App() {
     worker.postMessage("stop");
     worker.postMessage("ucinewgame");
     worker.postMessage(`setoption name Skill Level value ${config.skill}`);
-    worker.postMessage("setoption name UCI_LimitStrength value true");
-    worker.postMessage(`setoption name UCI_Elo value ${config.engineElo}`);
+    worker.postMessage("setoption name UCI_LimitStrength value false");
     worker.postMessage(`setoption name MultiPV value ${config.multi}`);
     worker.postMessage(`position fen ${gameRef.current.fen()}`);
     worker.postMessage(`go movetime ${thinkingTime}`);
